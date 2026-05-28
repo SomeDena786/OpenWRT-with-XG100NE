@@ -222,7 +222,7 @@ python3 tools/gen-ntt-vendor-opts.py
         "interface": "eth3",
         "subnet": "fe80::/64",
         "pd-pools": [{
-            "prefix": "240b:252:c661:4d40::",                   #HGWに配りたいプレフィックスを指定
+            "prefix": "240b:24xx:xxxx:xx40::",                   #HGWに配りたいプレフィックスを指定
             "prefix-len": 58,
             "delegated-len": 60
         }]
