@@ -150,6 +150,18 @@ mkdir -p /var/lib/kea && chmod 750 /var/lib/kea
 mkdir -p /var/run/kea && chmod 750 /var/run/kea
 ```
 
+> **★ 再起動対策 (必須)**: OpenWRT の `/var` は tmpfs なので、再起動すると上記ディレクトリは消える (`/var/run/kea` は 755 で再作成される)。
+> Kea は権限が 750 でないと `'socket-name' is invalid: socket path:/var/run/kea does not exist or does not have permssions = 750` で起動に失敗し、
+> HGW に PD / option 17 が配られず **登録ランプ赤点滅** になる。
+> Kea (S25) は rc.local (S95) より先に起動するため、`/etc/rc.local` の `exit 0` より前に以下を追記してディレクトリ作成後に再起動させる。
+>
+> ```sh
+> # Kea DHCPv6 (HGW向け): /var は tmpfs のため起動毎に作り直す
+> mkdir -p /var/run/kea /var/lib/kea
+> chmod 750 /var/run/kea /var/lib/kea
+> /etc/init.d/kea restart
+> ```
+
 ### 4.2 Vendor-specific (option 17) サブオプション生成
 
 直結キャプチャと突き合わせる代わりに、対話スクリプトで生成可能(なおちゃんと動くかどうかは未知数。東日本はたぶんダメ)
@@ -389,6 +401,7 @@ cat /proc/net/snmp6 | grep -E "InNoRoutes|OutNoRoutes"
 | HGW が ARP 応答もらえない | eth2 ingress mirred カウンタが増えてるか |
 | HGW 時刻 2019/01/01 | NTP IPv6 経路問題 (大体 promisc 原因の連鎖) |
 | SIP REGISTER タイムアウト | IPv4戻り経路 = 同上 |
+| 再起動後に登録ランプ赤点滅 | `/etc/init.d/kea status` が `not running` → 4.1 の再起動対策。復旧は dir 作成 → `kea start` → `ip link set eth3 down; ip link set eth3 up` で HGW に SOLICIT させる |
 | RA配信されない | `dhcp.v6pd.ra_default='1'` が抜けてないか |
 | HGW向け経路無効 | route6 gateway が**WAN MAC側**か (LAN MAC は NG) |
 
